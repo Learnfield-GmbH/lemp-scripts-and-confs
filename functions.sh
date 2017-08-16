@@ -57,3 +57,16 @@ function tryCommand() {
         printAndLog "Finished $1"
     fi
 }
+
+updateAptCacheAndUpgradePackages() {
+    tryCommand "apt-get -y update"
+    tryCommand "apt-get -y upgrade"
+
+    printAndLog "Updated APT caches and upgraded packages"
+}
+
+installPackages() {
+    tryCommand "apt-get install -y aptitude curl git sudo zip unzip python libssl-dev"
+
+    printAndLog "Installed regular packages"
+}
