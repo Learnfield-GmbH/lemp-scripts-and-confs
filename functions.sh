@@ -10,6 +10,13 @@ isUbuntu() {
     return false
 }
 
+setLocaleAndTimezone() {
+    echo 'LC_ALL="en_US.UTF-8"' >> /etc/environment
+    echo "Europe/Berlin" | tee /etc/timezone; dpkg-reconfigure --frontend noninteractive tzdata
+
+    printAndLog "Locale and timezone are now set"
+}
+
 # Checks if a user belongs to a group
 inGroup(){
    group="$1"
