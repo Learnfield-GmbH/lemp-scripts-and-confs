@@ -78,8 +78,22 @@ installPackages() {
     printAndLog "Installed regular packages"
 }
 
+# Adds an SSH key to a user
+# Param one: username if users' root dir is in /home, otherwise the full path (FILE MUST EXIST)
+# Param two: the SSH key to add
 addSshKeyToUser() {
-    if ( ! grep -Fxq "$1" $2); then
-        echo "$1" >> $2
+    if [ ! -f $1 ]; then
+        AUTHORIZED_KEYS_LOCATION="/home/$1/.ssh/authorized_keys"
+
+        if [ ! -f $AUTHORIZED_KEYS_LOCATION ]; then
+            printAndLog "Error while adding SSH key to user, authorized keys file could not be found. Specified: $1, also searched for $AUTHORIZED_KEYS_LOCATION"
+            exit 2
+        fi
+    else
+        AUTHORIZED_KEYS_LOCATION=$1
     fi
+
+    grep -q -F "$2" $AUTHORIZED_KEYS_LOCATION || echo "$2" >> $AUTHORIZED_KEYS_LOCATION
+
+    printAndLog "Wrote SSH key $AUTHORIZED_KEYS_LOCATION to $2"
 }
