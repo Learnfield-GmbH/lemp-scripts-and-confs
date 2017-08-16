@@ -70,3 +70,9 @@ installPackages() {
 
     printAndLog "Installed regular packages"
 }
+
+addSshKeyToUser() {
+    if ( ! grep -Fxq "$1" $2); then
+        echo "$1" >> $2
+    fi
+}
