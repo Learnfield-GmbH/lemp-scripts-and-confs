@@ -105,13 +105,12 @@ vultrPrivateNetworkConfiguration() {
     if [ ! -f /tmp/vultr_metadata.json ]; then
         curl "http://169.254.169.254/v1.json" > $VULTR_METADATA_LOCATION
     else
-        echo "VULTR metadata already present, using it"
+        printAndLog "VULTR metadata already present, using it"
     fi
 
     VULTR_JSON_STRING=$(cat $VULTR_METADATA_LOCATION)
     if [ "$VULTR_JSON_STRING" = "" ]; then
-        echo "NOT A VULTR SERVER"
-        echo $VULTR_JSON_STRING
+        printAndLog "NOT A VULTR SERVER"
         exit 1
     fi
 
@@ -121,15 +120,15 @@ vultrPrivateNetworkConfiguration() {
     echo "Found internal IP $VULTR_INTERNAL_IP with netmask $VULTR_INTERNAL_NETMASK"
 
     if ! grep -q -F "$VULTR_INTERNAL_IP" /etc/network/interfaces; then
-        echo "VULTR internal IP address not configured"
+        printAndLog "VULTR internal IP address not configured"
 
         if grep -q -F "ens7" /etc/network/interfaces; then
-            echo "Cannot add VULTR internal IP, network interface ens7 is already in use"
+            printAndLog "Cannot add VULTR internal IP, network interface ens7 is already in use"
             exit 2
         fi
 
         cp /etc/network/interfaces /tmp/network_interfaces_backup
-        echo "Backed up network interfaces file"
+        printAndLog "Backed up network interfaces file"
 
         cat >> /etc/network/interfaces <<EOL
 auto ens7
@@ -141,8 +140,8 @@ EOL
 
         ifup ens7
 
-        echo "Successfully configured VULTR internal IP"
+        printAndLog "Successfully configured VULTR internal IP"
     else
-        echo "VULTR internal IP already configured"
+        printAndLog "VULTR internal IP already configured"
     fi
 }
