@@ -97,3 +97,52 @@ addSshKeyToUser() {
 
     printAndLog "Wrote SSH key $AUTHORIZED_KEYS_LOCATION to $2"
 }
+
+# Configures Vultr internal IP address
+vultrPrivateNetworkConfiguration() {
+    VULTR_METADATA_LOCATION='/tmp/vultr_metadata.json'
+
+    if [ ! -f /tmp/vultr_metadata.json ]; then
+        curl "http://169.254.169.254/v1.json" > $VULTR_METADATA_LOCATION
+    else
+        echo "VULTR metadata already present, using it"
+    fi
+
+    VULTR_JSON_STRING=$(cat $VULTR_METADATA_LOCATION)
+    if [ "$VULTR_JSON_STRING" = "" ]; then
+        echo "NOT A VULTR SERVER"
+        echo $VULTR_JSON_STRING
+        exit 1
+    fi
+
+    VULTR_INTERNAL_IP=$(cat $VULTR_METADATA_LOCATION | python -c 'import json,sys;obj=json.load(sys.stdin);print [obj["interfaces"][1]["ipv4"]["address"],obj["interfaces"][0]["ipv4"]["address"]][obj["interfaces"][0]["ipv4"]["address"][:3] == '10.']')
+    VULTR_INTERNAL_NETMASK=$(cat $VULTR_METADATA_LOCATION | python -c 'import json,sys;obj=json.load(sys.stdin);print [obj["interfaces"][1]["ipv4"]["netmask"],obj["interfaces"][0]["ipv4"]["netmask"]][obj["interfaces"][0]["ipv4"]["netmask"][:3] == '10.']')
+
+    echo "Found internal IP $VULTR_INTERNAL_IP with netmask $VULTR_INTERNAL_NETMASK"
+
+    if ! grep -q -F "$VULTR_INTERNAL_IP" /etc/network/interfaces; then
+        echo "VULTR internal IP address not configured"
+
+        if grep -q -F "ens7" /etc/network/interfaces; then
+            echo "Cannot add VULTR internal IP, network interface ens7 is already in use"
+            exit 2
+        fi
+
+        cp /etc/network/interfaces /tmp/network_interfaces_backup
+        echo "Backed up network interfaces file"
+
+        cat >> /etc/network/interfaces <<EOL
+auto ens7
+iface ens7 inet static
+    address $VULTR_INTERNAL_IP
+    netmask $VULTR_INTERNAL_NETMASK
+    mtu 1450
+EOL
+
+        ifup ens7
+
+        echo "Successfully configured VULTR internal IP"
+    else
+        echo "VULTR internal IP already configured"
+    fi
+}
